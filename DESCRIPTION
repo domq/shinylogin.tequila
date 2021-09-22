@@ -1,16 +1,18 @@
 Package: shinylogin.tequila
-Title: What the Package Does (One Line, Title Case)
+Type: Package
+Title: "Authenticate Shiny Web applications against EPFL's Tequila SSO"
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
-           role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    c(person(given = "Dominique",
+             family = "Quatravaux",
+             email = "dominique.quatravaux@epfl.ch",
+             role = c("aut", "cre")))
+Description: Drop-in for 'shinylogin' tailor-made for authenticating
+    against EPFL's Tequila authentication system
+License: MIT
 Encoding: UTF-8
 LazyData: true
+Imports:
+    shiny (>= 1.5.0)
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
