@@ -30,6 +30,12 @@ login <- function() {
 serve <- function(input, output, session, reload_on_logout = FALSE) {
     user <- shinylogin::core.serve(input, output, session, reload_on_logout)
 
+    ## Synchronize visibility of the login button
+    shiny::observe({
+        shinyjs::toggle(id = "button_login",
+                        condition = user$state()$logged_in == FALSE)
+    })
+
     shiny::observeEvent(input$button_login, {
         ## Wow, that was an easy login!
         user$addLoginDetails(list(username = "joe", permissions = "standard"))
