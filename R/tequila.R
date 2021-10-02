@@ -16,11 +16,15 @@ login <- function() {
             shinylogin::core.logoutUI(id, label, icon, class, style)
         },
 
-        loginServer = function(reload_on_logout = FALSE) {
+        loginServer = function(reload_on_logout = FALSE,
+                               requestauth_params = NULL,
+                               fetchattributes_params = NULL) {
             shiny::moduleServer(
                 id,
                 function(input, output, session) {
-                    user <- serve(input, output, session, reload_on_logout)
+                    user <- serve(input, output, session, reload_on_logout,
+                                  requestauth_params = requestauth_params,
+                                  fetchattributes_params = fetchattributes_params)
                     ## Grant app code a low-privilege facet:
                     list(user = user$state, logout = user$logout)
                 })
@@ -29,7 +33,9 @@ login <- function() {
 
 .ids <- shinylogin::core.newIDSequence("tequila")
 
-serve <- function(input, output, session, reload_on_logout = FALSE) {
+serve <- function(input, output, session, reload_on_logout = FALSE,
+                  tequila_base_url = .tequila_prod_url,
+                  requestauth_params = NULL, fetchattributes_params = NULL) {
     user <- shinylogin::core.serve(input, output, session, reload_on_logout)
 
     ## Synchronize visibility of the login button
@@ -40,12 +46,21 @@ serve <- function(input, output, session, reload_on_logout = FALSE) {
 
     ## Tequila step 1: ask Tequila server for a session, then redirect browser
     shiny::observeEvent(input$button_login, {
-        createrequest_and_redirect(redirect_back_here_url(session$clientData))
+        do.call("createrequest_and_redirect",
+                c(list(
+                    app_url = redirect_back_here_url(session$clientData),
+                    tequila_base_url = tequila_base_url),
+                  requestauth_params))
     })
 
     ## Tequila step 2: back from Tequila with a ?key= query param
     shiny::observeEvent(session$clientData$url_search, {
-        back_from_tequila(session$clientData$url_search, user)
+        do.call("back_from_tequila",
+                c(list(
+                    url_search = session$clientData$url_search,
+                    user = user,
+                    tequila_base_url = tequila_base_url),
+                  fetchattributes_params))
     })
 
     user

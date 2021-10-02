@@ -34,7 +34,8 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output, session) {
-  server <- login$loginServer()
+  server <- login$loginServer(
+                      requestauth_params = c(allows = "categorie=epfl-guests"))
 
   observe({
     if (server$user()$logged_in) {
@@ -46,7 +47,11 @@ server <- function(input, output, session) {
 
   user_info <- reactive(server$user()$info)
 
-  user_is_admin <- reactive(TRUE)   ## TODO: make up some access control here, e.g. guests vs. regular accounts
+  user_is_admin <- reactive({
+      req(info <- user_info())
+
+      ! grepl("@", info$username)  ## i.e. all non-guests are admins
+  })
 
   user_data <- reactive({
     req(info <- user_info())
