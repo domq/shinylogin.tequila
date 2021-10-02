@@ -43,6 +43,11 @@ serve <- function(input, output, session, reload_on_logout = FALSE) {
         createrequest_and_redirect(redirect_back_here_url(session$clientData))
     })
 
+    ## Tequila step 2: back from Tequila with a ?key= query param
+    shiny::observeEvent(session$clientData$url_search, {
+        back_from_tequila(session$clientData$url_search, user)
+    })
+
     user
 }
 
@@ -103,4 +108,31 @@ createrequest_and_redirect <- function(app_url, tequila_base_url = .tequila_prod
     if (is.null(req)) return()
     redirect <- paste0(tequila_base_url, "/requestauth?requestkey=", req$key)
     shinyjs::runjs(sprintf('window.location.href = "%s";', redirect))
+}
+
+#' Validate Tequila credentials in the form of a `?key=` query parameter.
+#'
+#' @param url_search The current `session$clientData$url_search`. If
+#'     it contains a currently-valid Tequila session key, then login is successful.
+#' @param user The shinylogin `user` object
+back_from_tequila <- function(url_search, user, tequila_base_url = .tequila_prod_url, ...) {
+    key <- regmatches(url_search, regexec("^[?]key=(.*?)(&|$)", url_search, perl = TRUE))[[1]][2]
+    if (is.na(key)) return()
+
+    teq_attributes <- fetchattributes(tequila_base_url = tequila_base_url, key, ...)
+    if (is.null(teq_attributes)) return()
+
+    if (teq_attributes$status != "ok") {
+        print("Bad Tequila response")
+        print(teq_attributes)
+        return()
+    }
+
+    username <- teq_attributes$user
+    teq_attributes$user <- NULL
+    teq_attributes$key <- NULL
+
+    user$addLoginDetails(list(
+             username = username,
+             tequila = teq_attributes))
 }
