@@ -1,3 +1,5 @@
+requireNamespace(c("shiny", "shinyjs", "shinylogin"))
+
 #' @export
 login <- function() {
     id <- .ids$nextId()
