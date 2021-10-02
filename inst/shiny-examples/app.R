@@ -82,4 +82,4 @@ server <- function(input, output, session) {
   })
 }
 
-shiny::shinyApp(ui, server)
+shiny::shinyApp(ui, server, options = list(port = 3000))
