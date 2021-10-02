@@ -38,9 +38,9 @@ serve <- function(input, output, session, reload_on_logout = FALSE) {
                         condition = user$state()$logged_in == FALSE)
     })
 
+    ## Tequila step 1: ask Tequila server for a session, then redirect browser
     shiny::observeEvent(input$button_login, {
-        ## Wow, that was an easy login!
-        user$addLoginDetails(list(username = "joe", permissions = "standard"))
+        createrequest_and_redirect(redirect_back_here_url(session$clientData))
     })
 
     user
@@ -79,4 +79,28 @@ createrequest <- function(tequila_base_url = .tequila_prod_url, ...) {
 
 fetchattributes <- function(tequila_base_url = .tequila_prod_url, key, ...) {
     call_tequila(tequila_base_url, "fetchattributes", key = key, ...)
+}
+
+redirect_back_here_url <- function(clientData) {
+    is_standard_port <- (clientData$url_protocol == "http:" && clientData$url_port == 80) ||
+        (clientData$url_protocol == "https:" && clientData$url_port == 443)
+    ## Don't re-send the ?key= of a previous session to Tequila! It will not remove it for us.
+    url_search <- sub("^[?](key=.*?)(&|$)", "?\\2", clientData$url_search, perl = TRUE)
+    sprintf(
+        "%s//%s%s%s",
+        clientData$url_protocol,
+        `if`(is_standard_port, clientData$url_hostname,
+             sprintf("%s:%s", clientData$url_hostname, clientData$url_port)),
+        clientData$url_pathname, url_search)
+}
+
+#' Create a Tequila session, then redirect browser to Tequila for authentication
+#'
+#' The user will hopefully come back either immediately (if they are already logged in to Tequila),
+#' or after typing in their credentials.
+createrequest_and_redirect <- function(app_url, tequila_base_url = .tequila_prod_url, ...) {
+    req <- createrequest(tequila_base_url = tequila_base_url, urlaccess=app_url, ...)
+    if (is.null(req)) return()
+    redirect <- paste0(tequila_base_url, "/requestauth?requestkey=", req$key)
+    shinyjs::runjs(sprintf('window.location.href = "%s";', redirect))
 }
